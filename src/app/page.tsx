@@ -12,7 +12,6 @@ import { SubjectSelector } from '../components/SubjectSelector';
 import { CategoryTabs } from '../components/CategoryTabs';
 import { MaterialCard } from '../components/MaterialCard';
 import { MaterialUploadModal } from '../components/MaterialUploadModal';
-import { AuthModal } from '../components/AuthModal';
 import { PreviewModal } from '../components/PreviewModal';
 import { SqlSetupModal } from '../components/SqlSetupModal';
 
@@ -45,9 +44,9 @@ export default function HomePage() {
     email: string;
     isAuthorized: boolean;
   }>({
-    id: MOCK_APPROVED_MEMBERS[0].user_id || 'user-hemanth-1',
-    name: MOCK_APPROVED_MEMBERS[0].display_name,
-    email: MOCK_APPROVED_MEMBERS[0].email,
+    id: 'community-user',
+    name: 'Student',
+    email: 'student@college.edu',
     isAuthorized: true,
   });
 
@@ -57,7 +56,6 @@ export default function HomePage() {
 
   // Modals state
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isSetupOpen, setIsSetupOpen] = useState(false);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
 
@@ -97,32 +95,7 @@ export default function HomePage() {
     try {
       const supabase = createClient();
 
-      // Check current logged in user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        // Optional display name lookup if present in approved_members
-        const { data: memberData } = await supabase
-          .from('approved_members')
-          .select('*')
-          .eq('email', user.email || '')
-          .maybeSingle();
-
-        setCurrentFriend({
-          id: user.id,
-          name:
-            memberData?.display_name ||
-            user.user_metadata?.display_name ||
-            user.email?.split('@')[0] ||
-            'Member',
-          email: user.email || '',
-          isAuthorized: true, // Any registered user can view & upload notes!
-        });
-      }
-
-      // Fetch materials from Supabase
+      // Fetch materials directly from Supabase (public query, no auth needed)
       const { data: dbMaterials, error } = await supabase
         .from('materials')
         .select('*')
@@ -337,10 +310,7 @@ export default function HomePage() {
 
       {/* Main Navbar */}
       <Navbar
-        currentFriend={currentFriend}
-        isConfigured={isConfigured}
         onOpenUpload={() => setIsUploadOpen(true)}
-        onOpenAuth={() => setIsAuthOpen(true)}
         onOpenSetup={() => setIsSetupOpen(true)}
       />
 
@@ -353,7 +323,7 @@ export default function HomePage() {
             <div className="max-w-2xl space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-200 text-xs font-semibold border border-indigo-400/30">
                 <ShieldCheck className="w-3.5 h-3.5 text-indigo-300" />
-                <span>3 Friends Shared Vault</span>
+                <span>Open Community Study Vault</span>
                 <span>•</span>
                 <span>Persistent Across Devices</span>
               </div>
@@ -370,12 +340,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setIsUploadOpen(true)}
-                disabled={!currentFriend.isAuthorized}
-                className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-lg transition-all cursor-pointer ${
-                  currentFriend.isAuthorized
-                    ? 'bg-indigo-500 hover:bg-indigo-400 text-white shadow-indigo-600/30 active:scale-95'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
-                }`}
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-lg transition-all cursor-pointer bg-indigo-500 hover:bg-indigo-400 text-white shadow-indigo-600/30 active:scale-95"
               >
                 <Upload className="w-4 h-4" />
                 <span>Upload New Material</span>
@@ -480,8 +445,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={() => setIsUploadOpen(true)}
-                  disabled={!currentFriend.isAuthorized}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs cursor-pointer"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>Upload for {selectedSubject}</span>
@@ -502,7 +466,7 @@ export default function HomePage() {
             <span>Open Study Vault</span>
           </div>
           <p className="text-slate-400">
-            Powered by Next.js App Router, Supabase Auth & PostgreSQL RLS
+            Powered by Next.js &amp; Supabase Cloud Storage
           </p>
         </div>
       </footer>
@@ -515,18 +479,6 @@ export default function HomePage() {
         defaultCategory={selectedCategory}
         currentFriend={currentFriend}
         onMaterialUploaded={handleMaterialUploaded}
-      />
-
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        isConfigured={isConfigured}
-        currentFriend={currentFriend}
-        onSelectLocalFriend={(friend) => {
-          setCurrentFriend(friend);
-          showToast(`Active friend switched to ${friend.name}`);
-        }}
-        onSupabaseAuthChange={loadSupabaseData}
       />
 
       <PreviewModal

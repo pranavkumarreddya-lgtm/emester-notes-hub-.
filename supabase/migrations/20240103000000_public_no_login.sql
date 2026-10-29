@@ -91,3 +91,4 @@ CREATE POLICY "Public can delete study materials"
     ON storage.objects FOR DELETE
     TO anon, authenticated
     USING (bucket_id = 'study-materials');
+
