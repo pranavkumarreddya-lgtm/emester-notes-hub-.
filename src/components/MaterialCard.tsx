@@ -6,7 +6,7 @@ import { formatBytes, formatDate } from '../lib/utils';
 import {
   FileText,
   Image as ImageIcon,
-  HelpCircle,
+  GraduationCap,
   Download,
   Eye,
   Trash2,
@@ -50,9 +50,9 @@ export function MaterialCard({
           badge: 'bg-blue-50 text-blue-700 border-blue-200/80',
           filePill: 'bg-blue-50 text-blue-700',
         };
-      case 'Important Questions':
+      case 'Previous Year Question Papers':
         return {
-          icon: <HelpCircle className="w-4 h-4 text-amber-600" />,
+          icon: <GraduationCap className="w-4 h-4 text-amber-600" />,
           badge: 'bg-amber-50 text-amber-800 border-amber-200/80',
           filePill: 'bg-amber-50 text-amber-800',
         };

@@ -6,7 +6,7 @@ import { CATEGORIES, UNITS } from '../lib/constants';
 import {
   FileText,
   Image as ImageIcon,
-  HelpCircle,
+  GraduationCap,
   Search,
   Filter,
   Layers,
@@ -44,8 +44,8 @@ export function CategoryTabs({
         return <FileText className="w-4 h-4" />;
       case 'Photos':
         return <ImageIcon className="w-4 h-4" />;
-      case 'Important Questions':
-        return <HelpCircle className="w-4 h-4" />;
+      case 'Previous Year Question Papers':
+        return <GraduationCap className="w-4 h-4" />;
     }
   };
 
@@ -166,7 +166,7 @@ export function CategoryTabs({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search notes, questions..."
+            placeholder="Search notes, papers..."
             className="w-full text-xs pl-8 pr-8 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white text-slate-800 placeholder:text-slate-400"
           />
           {searchQuery && (

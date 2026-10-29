@@ -1,6 +1,6 @@
 export type SubjectCode = 'NLP' | 'DA' | 'DAA' | 'DEVOPS' | 'CN';
 
-export type MaterialCategory = 'PDF Notes' | 'Photos' | 'Important Questions';
+export type MaterialCategory = 'PDF Notes' | 'Photos' | 'Previous Year Question Papers';
 
 export type MaterialUnit = 'Unit 1' | 'Unit 2' | 'Unit 3' | 'Unit 4' | 'Unit 5';
 

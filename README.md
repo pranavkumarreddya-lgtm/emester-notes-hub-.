@@ -18,7 +18,7 @@ Built specifically for a study group of **three authorized friends** to organize
 ### Three Material Categories
 - **PDF Notes**: Comprehensive lecture notes, summaries, and formula derivations.
 - **Photos**: High-resolution classroom blackboard photos, diagram snapshots, and handwritten cheat sheets.
-- **Important Questions**: Semester-end question banks, model answers, and viva troubleshooting questions.
+- **Previous Year Question Papers**: Semester-end question papers, model papers, and previous exam question sheets.
 
 ### Syllabus Units
 - Materials can be categorized and filtered across **Unit 1**, **Unit 2**, **Unit 3**, **Unit 4**, and **Unit 5**.
@@ -146,7 +146,7 @@ semester-notes-hub/
     │   ├── Navbar.tsx         # Top bar with auth profile & quick actions
     │   ├── Banner.tsx         # Storage connection indicator
     │   ├── SubjectSelector.tsx # 5 Course selector cards (NLP, DA, DAA, DEVOPS, CN)
-    │   ├── CategoryTabs.tsx   # PDF Notes, Photos, Important Questions & Unit filters
+    │   ├── CategoryTabs.tsx   # PDF Notes, Photos, Previous Year Question Papers & Unit filters
     │   ├── MaterialCard.tsx   # Material card with grid/list view and preview/download
     │   ├── MaterialUploadModal.tsx # Upload modal with 10MB validation
     │   ├── AuthModal.tsx      # Supabase Auth / 3-friend switcher
@@ -168,7 +168,7 @@ semester-notes-hub/
 
 - [x] Next.js App Router, TypeScript, Tailwind CSS
 - [x] Exactly five subjects: NLP, DA, DAA, DEVOPS, CN
-- [x] Three categories per subject: PDF Notes, Photos, Important Questions
+- [x] Three categories per subject: PDF Notes, Photos, Previous Year Question Papers
 - [x] Three authorized friends access control (`approved_members` table & JWT checks)
 - [x] Private Supabase Storage bucket (`study-materials`) with signed download URLs
 - [x] Row Level Security (RLS) on database and storage objects

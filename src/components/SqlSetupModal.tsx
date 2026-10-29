@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS public.materials (
     title TEXT NOT NULL,
     description TEXT,
     subject TEXT NOT NULL CHECK (subject IN ('NLP', 'DA', 'DAA', 'DEVOPS', 'CN')),
-    category TEXT NOT NULL CHECK (category IN ('PDF Notes', 'Photos', 'Important Questions')),
+    category TEXT NOT NULL CHECK (category IN ('PDF Notes', 'Photos', 'Previous Year Question Papers')),
     unit TEXT CHECK (unit IS NULL OR unit IN ('Unit 1', 'Unit 2', 'Unit 3', 'Unit 4', 'Unit 5')),
     uploader_id UUID,
     uploader_name TEXT NOT NULL DEFAULT 'Student',

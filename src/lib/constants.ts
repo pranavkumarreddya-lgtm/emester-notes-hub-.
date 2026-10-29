@@ -66,7 +66,7 @@ export const SUBJECTS: SubjectConfig[] = [
 export const CATEGORIES: MaterialCategory[] = [
   'PDF Notes',
   'Photos',
-  'Important Questions',
+  'Previous Year Question Papers',
 ];
 
 export const UNITS: MaterialUnit[] = [

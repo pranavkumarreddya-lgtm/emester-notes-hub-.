@@ -51,7 +51,7 @@ export function SubjectSelector({
             </span>
           </h2>
           <p className="text-xs text-slate-500">
-            Select a subject to browse categorized notes, blackboard photos, and questions
+            Select a subject to browse categorized notes, blackboard photos, and previous year question papers
           </p>
         </div>
       </div>

@@ -256,7 +256,7 @@ export default function HomePage() {
     const counts: Record<MaterialCategory, number> = {
       'PDF Notes': 0,
       Photos: 0,
-      'Important Questions': 0,
+      'Previous Year Question Papers': 0,
     };
     materials
       .filter((m) => m.subject === selectedSubject)
@@ -331,7 +331,7 @@ export default function HomePage() {
                 Semester Notes & Study Repository
               </h1>
               <p className="text-xs sm:text-sm text-indigo-200/90 leading-relaxed">
-                Centralized archive for high-scoring PDF notes, classroom whiteboard photos, and recurring exam questions across our 5 core subjects.
+                Centralized archive for high-scoring PDF notes, classroom whiteboard photos, and previous year question papers across our 5 core subjects.
               </p>
             </div>
 
