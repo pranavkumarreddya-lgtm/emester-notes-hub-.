@@ -55,11 +55,11 @@ export function Navbar({
                   Semester Notes Hub
                 </span>
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70">
-                  3 Friends Vault
+                  Community Vault
                 </span>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Curated academic repository for NLP, DA, DAA, DEVOPS & CN
+                Collaborative academic repository for NLP, DA, DAA, DEVOPS & CN
               </p>
             </div>
           </div>
@@ -97,7 +97,7 @@ export function Navbar({
                   )}
                 </div>
                 <span className="text-[10px] text-slate-500 leading-tight block">
-                  {currentFriend.isAuthorized ? 'Authorized Friend' : 'Guest (Read Only)'}
+                  {currentFriend.isAuthorized ? 'Member' : 'Guest (Read Only)'}
                 </span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform" />

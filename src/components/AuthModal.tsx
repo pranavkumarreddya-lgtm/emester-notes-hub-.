@@ -112,10 +112,10 @@ export function AuthModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">
-                {isConfigured ? 'Supabase Authentication' : '3-Friend Roster Switcher'}
+                {isConfigured ? 'Supabase Authentication' : 'Account & Demo Switcher'}
               </h3>
               <p className="text-xs text-slate-500">
-                Authorized friend access & permissions
+                Access & account management
               </p>
             </div>
           </div>
@@ -284,12 +284,12 @@ export function AuthModal({
               </form>
             </div>
           ) : (
-            /* Local Vault Mode: Instant Switcher between 3 Friends */
+            /* Local Vault Mode: Instant Switcher between Demo Profiles */
             <div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>The 3 Authorized Friends</span>
+                  <span>Demo Member Profiles</span>
                 </span>
                 <span className="text-[11px] text-slate-400">Click to switch</span>
               </div>
@@ -377,7 +377,7 @@ export function AuthModal({
               <span>Row Level Security (RLS) Guarantee</span>
             </p>
             <p>
-              Only designated emails in the PostgreSQL <code>approved_members</code> table can upload or delete files. Each friend can only delete materials they personally uploaded.
+              Any registered student can view and upload semester materials. Each member can only delete or edit materials they personally uploaded.
             </p>
           </div>
         </div>

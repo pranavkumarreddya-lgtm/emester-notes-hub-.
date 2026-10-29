@@ -97,24 +97,23 @@ CREATE INDEX IF NOT EXISTS idx_materials_unit ON public.materials(unit);
 
 ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
 
--- Policy 1: Only approved members can view shared materials
+-- Policy 1: Authenticated users can view shared materials
 DROP POLICY IF EXISTS "Approved members can view materials" ON public.materials;
-CREATE POLICY "Approved members can view materials"
+DROP POLICY IF EXISTS "Authenticated users can view materials" ON public.materials;
+CREATE POLICY "Authenticated users can view materials"
     ON public.materials
     FOR SELECT
     TO authenticated
-    USING (public.is_approved_member());
+    USING (true);
 
--- Policy 2: Only approved members can insert their own materials
+-- Policy 2: Authenticated users can insert their own materials
 DROP POLICY IF EXISTS "Approved members can insert their own materials" ON public.materials;
-CREATE POLICY "Approved members can insert their own materials"
+DROP POLICY IF EXISTS "Authenticated users can insert their own materials" ON public.materials;
+CREATE POLICY "Authenticated users can insert their own materials"
     ON public.materials
     FOR INSERT
     TO authenticated
-    WITH CHECK (
-        public.is_approved_member() AND
-        auth.uid() = uploader_id
-    );
+    WITH CHECK (auth.uid() = uploader_id);
 
 -- Policy 3: Users can only update their own materials
 DROP POLICY IF EXISTS "Users can update their own materials" ON public.materials;
@@ -122,14 +121,8 @@ CREATE POLICY "Users can update their own materials"
     ON public.materials
     FOR UPDATE
     TO authenticated
-    USING (
-        public.is_approved_member() AND
-        auth.uid() = uploader_id
-    )
-    WITH CHECK (
-        public.is_approved_member() AND
-        auth.uid() = uploader_id
-    );
+    USING (auth.uid() = uploader_id)
+    WITH CHECK (auth.uid() = uploader_id);
 
 -- Policy 4: Users can only delete their own materials
 DROP POLICY IF EXISTS "Users can delete their own materials" ON public.materials;
@@ -137,10 +130,7 @@ CREATE POLICY "Users can delete their own materials"
     ON public.materials
     FOR DELETE
     TO authenticated
-    USING (
-        public.is_approved_member() AND
-        auth.uid() = uploader_id
-    );
+    USING (auth.uid() = uploader_id);
 
 -- 3. Storage Bucket & Policies
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -168,26 +158,24 @@ ON CONFLICT (id) DO UPDATE SET
         'image/webp'
     ];
 
--- Storage RLS: Approved members can download / generate signed URLs
+-- Storage RLS: Authenticated users can download / generate signed URLs
 DROP POLICY IF EXISTS "Approved members can access study materials" ON storage.objects;
-CREATE POLICY "Approved members can access study materials"
+DROP POLICY IF EXISTS "Authenticated users can access study materials" ON storage.objects;
+CREATE POLICY "Authenticated users can access study materials"
     ON storage.objects
     FOR SELECT
     TO authenticated
-    USING (
-        bucket_id = 'study-materials' AND
-        public.is_approved_member()
-    );
+    USING (bucket_id = 'study-materials');
 
--- Storage RLS: Approved members can upload only into their own folder ({user_id}/*)
+-- Storage RLS: Authenticated users can upload only into their own folder ({user_id}/*)
 DROP POLICY IF EXISTS "Approved members can upload their own files" ON storage.objects;
-CREATE POLICY "Approved members can upload their own files"
+DROP POLICY IF EXISTS "Authenticated users can upload their own files" ON storage.objects;
+CREATE POLICY "Authenticated users can upload their own files"
     ON storage.objects
     FOR INSERT
     TO authenticated
     WITH CHECK (
         bucket_id = 'study-materials' AND
-        public.is_approved_member() AND
         (storage.foldername(name))[1] = auth.uid()::text
     );
 
@@ -199,7 +187,6 @@ CREATE POLICY "Users can delete their own files"
     TO authenticated
     USING (
         bucket_id = 'study-materials' AND
-        public.is_approved_member() AND
         (storage.foldername(name))[1] = auth.uid()::text
     );
 

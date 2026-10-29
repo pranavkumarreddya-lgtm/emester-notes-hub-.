@@ -103,12 +103,12 @@ export default function HomePage() {
       } = await supabase.auth.getUser();
 
       if (user) {
-        // Check if user is in approved_members table
+        // Optional display name lookup if present in approved_members
         const { data: memberData } = await supabase
           .from('approved_members')
           .select('*')
           .eq('email', user.email || '')
-          .single();
+          .maybeSingle();
 
         setCurrentFriend({
           id: user.id,
@@ -116,9 +116,9 @@ export default function HomePage() {
             memberData?.display_name ||
             user.user_metadata?.display_name ||
             user.email?.split('@')[0] ||
-            'Authorized Friend',
+            'Member',
           email: user.email || '',
-          isAuthorized: Boolean(memberData),
+          isAuthorized: true, // Any registered user can view & upload notes!
         });
       }
 
@@ -499,7 +499,7 @@ export default function HomePage() {
             <GraduationCap className="w-4 h-4 text-indigo-600" />
             <span className="font-semibold text-slate-800">Semester Notes Hub</span>
             <span>•</span>
-            <span>3 Authorized Friends Vault</span>
+            <span>Open Study Vault</span>
           </div>
           <p className="text-slate-400">
             Powered by Next.js App Router, Supabase Auth & PostgreSQL RLS
