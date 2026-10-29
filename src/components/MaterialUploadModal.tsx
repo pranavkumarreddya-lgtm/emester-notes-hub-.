@@ -43,6 +43,7 @@ export function MaterialUploadModal({
   const [subject, setSubject] = useState<SubjectCode>(defaultSubject);
   const [category, setCategory] = useState<MaterialCategory>(defaultCategory);
   const [unit, setUnit] = useState<MaterialUnit | ''>('Unit 1');
+  const [uploaderName, setUploaderName] = useState('Student');
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -103,12 +104,11 @@ export function MaterialUploadModal({
       const configured = isSupabaseConfigured();
 
       if (configured) {
-        // Upload to private Supabase Storage bucket 'study-materials'
-        // Path matches RLS rule: (storage.foldername(name))[1] = auth.uid()::text
+        // Upload directly to public Supabase Storage bucket 'study-materials'
         const cleanFileName = selectedFile.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-        const storagePath = `${currentFriend.id}/${Date.now()}-${cleanFileName}`;
+        const storagePath = `notes/${Date.now()}-${cleanFileName}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('study-materials')
           .upload(storagePath, selectedFile, {
             cacheControl: '3600',
@@ -118,6 +118,13 @@ export function MaterialUploadModal({
         if (uploadError) {
           throw new Error(`Storage upload failed: ${uploadError.message}`);
         }
+
+        // Get public URL directly from the public bucket
+        const { data: publicUrlData } = supabase.storage
+          .from('study-materials')
+          .getPublicUrl(storagePath);
+
+        const authorName = uploaderName.trim() || 'Student';
 
         // Insert metadata record into materials table
         const { data: insertData, error: insertError } = await supabase
@@ -129,8 +136,8 @@ export function MaterialUploadModal({
               subject,
               category,
               unit: unit || null,
-              uploader_id: currentFriend.id,
-              uploader_name: currentFriend.name,
+              uploader_id: null,
+              uploader_name: authorName,
               original_filename: selectedFile.name,
               storage_path: storagePath,
               file_size: selectedFile.size,
@@ -144,18 +151,14 @@ export function MaterialUploadModal({
           throw new Error(`Database insert failed: ${insertError.message}`);
         }
 
-        // Fetch signed url for immediate preview
-        const { data: signedData } = await supabase.storage
-          .from('study-materials')
-          .createSignedUrl(storagePath, 3600);
-
         onMaterialUploaded({
           ...insertData,
-          download_url: signedData?.signedUrl,
+          download_url: publicUrlData?.publicUrl,
         });
       } else {
         // Local Vault Demo Mode: Store file locally via Object URL / Base64
         const fileBlobUrl = URL.createObjectURL(selectedFile);
+        const authorName = uploaderName.trim() || 'Student';
         const newMockMaterial: Material = {
           id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           title: title.trim(),
@@ -163,8 +166,8 @@ export function MaterialUploadModal({
           subject,
           category,
           unit: unit || null,
-          uploader_id: currentFriend.id,
-          uploader_name: currentFriend.name,
+          uploader_id: 'anonymous-student',
+          uploader_name: authorName,
           original_filename: selectedFile.name,
           storage_path: `local/${selectedFile.name}`,
           file_size: selectedFile.size,
@@ -196,7 +199,7 @@ export function MaterialUploadModal({
               <span>Upload Semester Material</span>
             </h3>
             <p className="text-xs text-slate-500">
-              Uploading as <strong className="text-slate-700">{currentFriend.name}</strong>
+              Open Sharing • Direct upload to Supabase storage
             </p>
           </div>
           <button
@@ -287,6 +290,20 @@ export function MaterialUploadModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Unit 3 Dynamic Programming Detailed Proofs"
               required
+              className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900"
+            />
+          </div>
+
+          {/* Uploader Name field */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Your Name / Contributor (Optional)
+            </label>
+            <input
+              type="text"
+              value={uploaderName}
+              onChange={(e) => setUploaderName(e.target.value)}
+              placeholder="e.g. Rahul, Student, Anonymous"
               className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900"
             />
           </div>

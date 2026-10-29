@@ -54,12 +54,12 @@ export function Navbar({
                 <span className="font-bold text-lg text-slate-900 tracking-tight">
                   Semester Notes Hub
                 </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/70">
-                  Community Vault
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                  Open Access • No Login Needed
                 </span>
               </div>
               <p className="text-xs text-slate-500 hidden sm:block">
-                Collaborative academic repository for NLP, DA, DAA, DEVOPS & CN
+                Open academic repository for NLP, DA, DAA, DEVOPS & CN
               </p>
             </div>
           </div>
@@ -103,16 +103,11 @@ export function Navbar({
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-transform" />
             </button>
 
-            {/* Upload Material CTA */}
+            {/* Upload Material CTA - Always Enabled */}
             <button
               onClick={onOpenUpload}
               type="button"
-              disabled={!currentFriend.isAuthorized}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all cursor-pointer ${
-                currentFriend.isAuthorized
-                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/25 active:scale-95'
-                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-              }`}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition-all cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/25 active:scale-95"
             >
               <Upload className="w-4 h-4" />
               <span>Upload Notes</span>

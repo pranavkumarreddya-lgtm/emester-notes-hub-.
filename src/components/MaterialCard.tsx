@@ -34,7 +34,7 @@ export function MaterialCard({
   onDownload,
   onDelete,
 }: MaterialCardProps) {
-  const isOwner = material.uploader_id === currentUserId;
+  const isOwner = true; // Open community access - any user can delete with confirmation
 
   const getCategoryTheme = () => {
     switch (material.category) {

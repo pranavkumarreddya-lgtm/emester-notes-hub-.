@@ -19,61 +19,11 @@ interface SqlSetupModalProps {
 }
 
 const SQL_MIGRATION_TEXT = `-- ==============================================================================
--- Semester Notes Hub - Complete Database Schema & Storage Security Policies
--- Designed for exactly three approved friends
+-- Semester Notes Hub - Public Schema & Storage Policies (No Login Required)
+-- Allows any student to view, download, and upload semester materials directly.
 -- ==============================================================================
 
--- 1. Approved Members Table
-CREATE TABLE IF NOT EXISTS public.approved_members (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT UNIQUE NOT NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    display_name TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- Enable Row Level Security on approved_members
-ALTER TABLE public.approved_members ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Allow authenticated to view approved roster" ON public.approved_members;
-CREATE POLICY "Allow authenticated to view approved roster"
-    ON public.approved_members
-    FOR SELECT
-    TO authenticated
-    USING (true);
-
--- Helper function: Check if current authenticated user is an approved member
-CREATE OR REPLACE FUNCTION public.is_approved_member()
-RETURNS boolean
-LANGUAGE sql
-SECURITY DEFINER
-SET search_path = public
-STABLE
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.approved_members
-    WHERE (approved_members.user_id = auth.uid())
-       OR (lower(approved_members.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
-  );
-$$;
-
--- Trigger to auto-associate auth.users(id) with approved_members when a user registers or logs in
-CREATE OR REPLACE FUNCTION public.handle_user_sync()
-RETURNS trigger AS $$
-BEGIN
-    UPDATE public.approved_members
-    SET user_id = NEW.id
-    WHERE lower(email) = lower(NEW.email);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT OR UPDATE ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_user_sync();
-
--- 2. Materials Table
+-- 1. Materials Table
 CREATE TABLE IF NOT EXISTS public.materials (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
@@ -81,8 +31,8 @@ CREATE TABLE IF NOT EXISTS public.materials (
     subject TEXT NOT NULL CHECK (subject IN ('NLP', 'DA', 'DAA', 'DEVOPS', 'CN')),
     category TEXT NOT NULL CHECK (category IN ('PDF Notes', 'Photos', 'Important Questions')),
     unit TEXT CHECK (unit IS NULL OR unit IN ('Unit 1', 'Unit 2', 'Unit 3', 'Unit 4', 'Unit 5')),
-    uploader_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    uploader_name TEXT NOT NULL,
+    uploader_id UUID,
+    uploader_name TEXT NOT NULL DEFAULT 'Student',
     original_filename TEXT NOT NULL,
     storage_path TEXT NOT NULL UNIQUE,
     file_size BIGINT,
@@ -90,55 +40,54 @@ CREATE TABLE IF NOT EXISTS public.materials (
     created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Remove foreign key constraint if existing from earlier migration
+ALTER TABLE public.materials DROP CONSTRAINT IF EXISTS materials_uploader_id_fkey;
+ALTER TABLE public.materials ALTER COLUMN uploader_id DROP NOT NULL;
+
+-- Indexes for fast querying
 CREATE INDEX IF NOT EXISTS idx_materials_subject_category ON public.materials(subject, category);
 CREATE INDEX IF NOT EXISTS idx_materials_created_at ON public.materials(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_materials_uploader_id ON public.materials(uploader_id);
 CREATE INDEX IF NOT EXISTS idx_materials_unit ON public.materials(unit);
 
+-- Enable RLS and grant public access to anon and authenticated roles
 ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+GRANT ALL ON public.materials TO anon, authenticated;
 
--- Policy 1: Authenticated users can view shared materials
-DROP POLICY IF EXISTS "Approved members can view materials" ON public.materials;
-DROP POLICY IF EXISTS "Authenticated users can view materials" ON public.materials;
-CREATE POLICY "Authenticated users can view materials"
-    ON public.materials
-    FOR SELECT
-    TO authenticated
+-- Policies on materials: Allow public read, insert, update, and delete
+DROP POLICY IF EXISTS "Public can view materials" ON public.materials;
+CREATE POLICY "Public can view materials"
+    ON public.materials FOR SELECT
+    TO anon, authenticated
     USING (true);
 
--- Policy 2: Authenticated users can insert their own materials
-DROP POLICY IF EXISTS "Approved members can insert their own materials" ON public.materials;
-DROP POLICY IF EXISTS "Authenticated users can insert their own materials" ON public.materials;
-CREATE POLICY "Authenticated users can insert their own materials"
-    ON public.materials
-    FOR INSERT
-    TO authenticated
-    WITH CHECK (auth.uid() = uploader_id);
+DROP POLICY IF EXISTS "Public can insert materials" ON public.materials;
+CREATE POLICY "Public can insert materials"
+    ON public.materials FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
 
--- Policy 3: Users can only update their own materials
-DROP POLICY IF EXISTS "Users can update their own materials" ON public.materials;
-CREATE POLICY "Users can update their own materials"
-    ON public.materials
-    FOR UPDATE
-    TO authenticated
-    USING (auth.uid() = uploader_id)
-    WITH CHECK (auth.uid() = uploader_id);
+DROP POLICY IF EXISTS "Public can update materials" ON public.materials;
+CREATE POLICY "Public can update materials"
+    ON public.materials FOR UPDATE
+    TO anon, authenticated
+    USING (true)
+    WITH CHECK (true);
 
--- Policy 4: Users can only delete their own materials
-DROP POLICY IF EXISTS "Users can delete their own materials" ON public.materials;
-CREATE POLICY "Users can delete their own materials"
-    ON public.materials
-    FOR DELETE
-    TO authenticated
-    USING (auth.uid() = uploader_id);
+DROP POLICY IF EXISTS "Public can delete materials" ON public.materials;
+CREATE POLICY "Public can delete materials"
+    ON public.materials FOR DELETE
+    TO anon, authenticated
+    USING (true);
 
--- 3. Storage Bucket & Policies
+
+-- 2. Storage Bucket: Public 'study-materials'
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
     'study-materials',
     'study-materials',
-    false,
-    10485760, -- 10MB in bytes
+    true,
+    52428800, -- 50MB per file
     ARRAY[
         'application/pdf',
         'image/jpeg',
@@ -148,62 +97,27 @@ VALUES (
     ]
 )
 ON CONFLICT (id) DO UPDATE SET
-    public = false,
-    file_size_limit = 10485760,
-    allowed_mime_types = ARRAY[
-        'application/pdf',
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/webp'
-    ];
+    public = true,
+    file_size_limit = 52428800;
 
--- Storage RLS: Authenticated users can download / generate signed URLs
-DROP POLICY IF EXISTS "Approved members can access study materials" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated users can access study materials" ON storage.objects;
-CREATE POLICY "Authenticated users can access study materials"
-    ON storage.objects
-    FOR SELECT
-    TO authenticated
+-- Storage Policies: Public can download, upload, and delete
+DROP POLICY IF EXISTS "Public can access study materials" ON storage.objects;
+CREATE POLICY "Public can access study materials"
+    ON storage.objects FOR SELECT
+    TO anon, authenticated
     USING (bucket_id = 'study-materials');
 
--- Storage RLS: Authenticated users can upload only into their own folder ({user_id}/*)
-DROP POLICY IF EXISTS "Approved members can upload their own files" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated users can upload their own files" ON storage.objects;
-CREATE POLICY "Authenticated users can upload their own files"
-    ON storage.objects
-    FOR INSERT
-    TO authenticated
-    WITH CHECK (
-        bucket_id = 'study-materials' AND
-        (storage.foldername(name))[1] = auth.uid()::text
-    );
+DROP POLICY IF EXISTS "Public can upload study materials" ON storage.objects;
+CREATE POLICY "Public can upload study materials"
+    ON storage.objects FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (bucket_id = 'study-materials');
 
--- Storage RLS: Users can delete only their own uploaded files
-DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
-CREATE POLICY "Users can delete their own files"
-    ON storage.objects
-    FOR DELETE
-    TO authenticated
-    USING (
-        bucket_id = 'study-materials' AND
-        (storage.foldername(name))[1] = auth.uid()::text
-    );
-
--- 4. Default Seed & Permissions
-GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT SELECT ON public.approved_members TO authenticated;
-GRANT ALL ON public.materials TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_approved_member() TO authenticated;
-
--- Seed the 3 authorized friends:
--- Replace these emails with your actual college emails in the Supabase Table Editor or directly below
-INSERT INTO public.approved_members (email, display_name)
-VALUES
-    ('hemanth@gmail.com', 'Hemanth'),
-    ('kishore@gmail.com', 'Kishore'),
-    ('nani@gmail.com', 'Nani')
-ON CONFLICT (email) DO NOTHING;`;
+DROP POLICY IF EXISTS "Public can delete study materials" ON storage.objects;
+CREATE POLICY "Public can delete study materials"
+    ON storage.objects FOR DELETE
+    TO anon, authenticated
+    USING (bucket_id = 'study-materials');`;
 
 export function SqlSetupModal({ isOpen, onClose }: SqlSetupModalProps) {
   const [copied, setCopied] = useState(false);
