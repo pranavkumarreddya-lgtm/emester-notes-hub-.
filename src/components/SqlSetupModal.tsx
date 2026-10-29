@@ -213,9 +213,9 @@ GRANT EXECUTE ON FUNCTION public.is_approved_member() TO authenticated;
 -- Replace these emails with your actual college emails in the Supabase Table Editor or directly below
 INSERT INTO public.approved_members (email, display_name)
 VALUES
-    ('alex@college.edu', 'Alex Rivera'),
-    ('sam@college.edu', 'Sam Chen'),
-    ('jordan@college.edu', 'Jordan Patel')
+    ('hemanth@gmail.com', 'Hemanth'),
+    ('kishore@gmail.com', 'Kishore'),
+    ('nani@gmail.com', 'Nani')
 ON CONFLICT (email) DO NOTHING;`;
 
 export function SqlSetupModal({ isOpen, onClose }: SqlSetupModalProps) {
