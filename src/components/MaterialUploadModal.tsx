@@ -116,6 +116,11 @@ export function MaterialUploadModal({
           });
 
         if (uploadError) {
+          if (uploadError.message.toLowerCase().includes('bucket not found')) {
+            throw new Error(
+              'Bucket "study-materials" not found in Supabase. Please go to Supabase Dashboard > Storage, click "New bucket", name it "study-materials", and turn ON "Public bucket".'
+            );
+          }
           throw new Error(`Storage upload failed: ${uploadError.message}`);
         }
 
