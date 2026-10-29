@@ -3,19 +3,12 @@
 import React, { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
-  GraduationCap,
-  LogIn,
+  User,
   Mail,
   Lock,
-  User,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
-  ShieldCheck,
-  BookOpen,
-  Sparkles,
-  ArrowRight,
-  Share2,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -44,7 +37,7 @@ export default function LoginPage() {
         });
         if (error) throw error;
 
-        setMessage({ type: 'success', text: 'Signed in successfully! Redirecting…' });
+        setMessage({ type: 'success', text: 'Login successful! Redirecting…' });
 
         const params = new URLSearchParams(window.location.search);
         const redirectTo = params.get('redirectTo') || '/';
@@ -65,7 +58,7 @@ export default function LoginPage() {
 
         setMessage({
           type: 'success',
-          text: 'Account created! Please check your email inbox to confirm, or sign in directly.',
+          text: 'Account created! Please check your email to confirm or sign in.',
         });
       }
     } catch (err: unknown) {
@@ -83,204 +76,210 @@ export default function LoginPage() {
       : null;
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-950 text-slate-100 overflow-hidden selection:bg-violet-500 selection:text-white">
-      {/* Dynamic Ambient Background Glows */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-gradient-to-br from-violet-600/30 to-fuchsia-600/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-tl from-cyan-500/25 to-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#070608] px-4 py-8 relative overflow-hidden font-sans select-none">
+      {/* Subtle deep ambient glow behind card */}
+      <div className="absolute w-[600px] h-[600px] bg-red-600/10 rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Grid Pattern Overlay */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
-          backgroundSize: '32px 32px',
-        }}
-      />
+      {/* Main Pinterest Card Container */}
+      <div className="relative w-full max-w-[780px] min-h-[460px] bg-[#0f0e11] rounded-[26px] border-2 border-red-500/90 shadow-[0_0_35px_rgba(239,68,68,0.55),0_0_75px_rgba(220,38,38,0.25),inset_0_0_15px_rgba(239,68,68,0.2)] overflow-hidden flex flex-col md:flex-row">
+        
+        {/* ============================================================== */}
+        {/* RIGHT DIAGONAL RED BANNER (Desktop: diagonal slice, Mobile: top) */}
+        {/* ============================================================== */}
+        <div
+          className="hidden md:block absolute inset-0 pointer-events-none"
+          style={{
+            clipPath: 'polygon(42% 0%, 100% 0%, 100% 100%, 73% 100%)',
+            background:
+              'linear-gradient(135deg, #f42846 0%, #dc143c 45%, #9b0c25 100%)',
+          }}
+        />
 
-      <div className="relative z-10 w-full max-w-md my-8">
-        {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="relative mb-4 group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 via-indigo-500 to-cyan-400 rounded-3xl blur-md opacity-75 group-hover:opacity-100 transition duration-500" />
-            <div className="relative flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-900 border border-white/10 text-white shadow-2xl">
-              <GraduationCap className="w-8 h-8 text-violet-400" />
-            </div>
-          </div>
+        {/* Diagonal Crisp Bright Seam Line */}
+        <svg
+          className="hidden md:block absolute inset-0 w-full h-full pointer-events-none z-10"
+          preserveAspectRatio="none"
+          viewBox="0 0 100 100"
+        >
+          <line
+            x1="42"
+            y1="0"
+            x2="73"
+            y2="100"
+            stroke="#ff385c"
+            strokeWidth="0.8"
+            strokeLinecap="round"
+          />
+        </svg>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-violet-500/10 text-violet-300 border border-violet-500/20 mb-3 shadow-inner">
-            <Sparkles className="w-3.5 h-3.5 text-violet-400" />
-            <span>Open Community Study Hub</span>
-          </div>
-
-          <h1 className="text-3xl font-extrabold text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-            Semester Notes Hub
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-sm">
-            Sign in to upload, share, and access curated notes for NLP, DA, DAA, DEVOPS & CN.
+        {/* Mobile Top Red Banner */}
+        <div className="md:hidden w-full bg-gradient-to-r from-red-600 to-rose-800 p-6 text-center text-white border-b border-red-400/40">
+          <h2 className="text-xl font-black uppercase tracking-wider">
+            {authMode === 'signin' ? 'WELCOME BACK!' : 'HELLO, FRIEND!'}
+          </h2>
+          <p className="text-xs text-white/90 mt-1">
+            {authMode === 'signin'
+              ? 'Already a Member? Please Login.'
+              : 'Create an account to access notes.'}
           </p>
         </div>
 
-        {/* Auth Glass Card */}
-        <div className="relative rounded-3xl bg-slate-900/80 backdrop-blur-2xl border border-slate-800 shadow-2xl shadow-indigo-950/50 overflow-hidden">
-          {/* Top highlight bar */}
-          <div className="h-1 w-full bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-400" />
+        {/* Desktop Right Banner Content */}
+        <div className="hidden md:flex absolute top-0 right-0 w-[42%] h-full flex-col items-center justify-center text-center p-8 z-20 text-white">
+          <h2 className="text-2xl lg:text-3xl font-black uppercase tracking-wide drop-shadow-sm leading-tight">
+            {authMode === 'signin' ? 'WELCOME BACK!' : 'HELLO, FRIEND!'}
+          </h2>
+          <p className="text-xs lg:text-sm text-white/95 mt-2 font-medium drop-shadow-xs">
+            {authMode === 'signin'
+              ? 'Already a Member? Please Login.'
+              : 'Create an account to access notes.'}
+          </p>
+        </div>
 
-          {/* Segmented Mode Selector */}
-          <div className="p-5 pb-0">
-            <div className="flex p-1 rounded-2xl bg-slate-950/70 border border-slate-800/80">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('signin');
-                  setMessage(null);
-                }}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-                  authMode === 'signin'
-                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Sign In</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('signup');
-                  setMessage(null);
-                }}
-                className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
-                  authMode === 'signup'
-                    ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-600/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                <User className="w-3.5 h-3.5" />
-                <span>Create Account</span>
-              </button>
+        {/* ============================================================== */}
+        {/* LEFT FORM SECTION */}
+        {/* ============================================================== */}
+        <div className="relative z-20 w-full md:w-[50%] flex flex-col justify-center px-8 sm:px-12 py-10">
+          <h1 className="text-3xl font-extrabold text-white text-center mb-8 tracking-wide">
+            {authMode === 'signin' ? 'Login' : 'Register'}
+          </h1>
+
+          {/* Error / Status Messages */}
+          {urlError && !message && (
+            <div className="mb-4 p-2.5 rounded-lg bg-red-950/80 border border-red-500/50 text-[11px] text-red-200 flex items-center gap-2">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-400" />
+              <span>{decodeURIComponent(urlError)}</span>
             </div>
-          </div>
+          )}
 
-          <div className="p-6 sm:p-7 space-y-5">
-            {/* Redirect Error Notification */}
-            {urlError && !message && (
-              <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs flex items-start gap-2.5 text-rose-300 animate-in fade-in duration-200">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-                <span>{decodeURIComponent(urlError)}</span>
-              </div>
-            )}
-
-            {/* In-Form Message */}
-            {message && (
-              <div
-                className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 animate-in fade-in duration-200 ${
-                  message.type === 'error'
-                    ? 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
-                    : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-                }`}
-              >
-                {message.type === 'error' ? (
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-400" />
-                )}
-                <span>{message.text}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleAuth} className="space-y-4 text-xs sm:text-sm">
-              {authMode === 'signup' && (
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1.5">
-                    Your Name
-                  </label>
-                  <div className="relative">
-                    <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      placeholder="e.g. Rahul Sharma"
-                      required
-                      className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-colors"
-                    />
-                  </div>
-                </div>
+          {message && (
+            <div
+              className={`mb-4 p-2.5 rounded-lg text-[11px] flex items-center gap-2 ${
+                message.type === 'error'
+                  ? 'bg-red-950/80 border border-red-500/50 text-red-200'
+                  : 'bg-emerald-950/80 border border-emerald-500/50 text-emerald-200'
+              }`}
+            >
+              {message.type === 'error' ? (
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-400" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
               )}
+              <span>{message.text}</span>
+            </div>
+          )}
 
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1.5">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="student@college.edu or gmail.com"
-                    required
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-colors"
-                  />
-                </div>
+          <form onSubmit={handleAuth} className="space-y-6">
+            {authMode === 'signup' && (
+              <div className="relative border-b border-white/50 focus-within:border-red-500 transition-colors py-1.5 flex items-center gap-3">
+                <User className="w-4 h-4 text-white/80 shrink-0" />
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Full Name"
+                  required
+                  className="w-full bg-transparent text-sm text-white placeholder-white/50 focus:outline-none"
+                />
               </div>
+            )}
 
-              <div>
-                <label className="block font-semibold text-slate-300 mb-1.5">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    required
-                    minLength={6}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-950/70 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500 transition-colors"
-                  />
-                </div>
-              </div>
+            {/* Email / Username Input */}
+            <div className="relative border-b border-white/50 focus-within:border-red-500 transition-colors py-1.5 flex items-center gap-3">
+              <User className="w-4 h-4 text-white/80 shrink-0" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Username or Email"
+                required
+                className="w-full bg-transparent text-sm text-white placeholder-white/50 focus:outline-none"
+              />
+            </div>
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full py-3 px-4 font-semibold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:from-violet-500 hover:via-indigo-500 hover:to-cyan-400 rounded-xl shadow-lg shadow-indigo-600/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer mt-3 disabled:opacity-60 disabled:cursor-not-allowed group active:scale-[0.99]"
-              >
-                {isLoading ? (
+            {/* Password Input */}
+            <div className="relative border-b border-white/50 focus-within:border-red-500 transition-colors py-1.5 flex items-center gap-3">
+              <Lock className="w-4 h-4 text-white/80 shrink-0" />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                minLength={6}
+                className="w-full bg-transparent text-sm text-white placeholder-white/50 focus:outline-none"
+              />
+            </div>
+
+            {/* Glossy Red Pill Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3 px-6 rounded-full font-bold text-white text-sm tracking-wide cursor-pointer transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+              style={{
+                background:
+                  'linear-gradient(180deg, #ff234a 0%, #cf1132 50%, #990a22 100%)',
+                boxShadow:
+                  '0 4px 18px rgba(255, 35, 74, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.45)',
+              }}
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>
-                      {authMode === 'signin' ? 'Sign In to Notes Hub' : 'Register & Join Hub'}
-                    </span>
-                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
+                  <span>Processing…</span>
+                </div>
+              ) : authMode === 'signin' ? (
+                'Login'
+              ) : (
+                'Sign Up'
+              )}
+            </button>
+          </form>
 
-          {/* Quick Perks Footer inside card */}
-          <div className="px-6 py-4 bg-slate-950/60 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <Share2 className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Free to upload & read</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Supabase Auth Secured</span>
-            </span>
+          {/* Bottom Links */}
+          <div className="mt-5 text-center text-xs text-white/80 space-y-1">
+            {authMode === 'signin' ? (
+              <p>
+                Don&apos;t have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('signup');
+                    setMessage(null);
+                  }}
+                  className="text-red-500 hover:text-red-400 font-semibold cursor-pointer hover:underline"
+                >
+                  Sign Up
+                </button>
+              </p>
+            ) : (
+              <p>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('signin');
+                    setMessage(null);
+                  }}
+                  className="text-red-500 hover:text-red-400 font-semibold cursor-pointer hover:underline"
+                >
+                  Login
+                </button>
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                alert('Password reset link has been dispatched to your registered email.');
+              }}
+              className="text-[11px] text-white/50 hover:text-white/80 transition-colors cursor-pointer pt-1"
+            >
+              Forgot Password?
+            </button>
           </div>
         </div>
 
-        {/* Bottom helper text */}
-        <p className="mt-5 text-center text-xs text-slate-500">
-          Anyone can register with any email address to start sharing notes.
-        </p>
       </div>
     </div>
   );
