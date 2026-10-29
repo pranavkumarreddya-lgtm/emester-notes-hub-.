@@ -9,6 +9,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Send,
 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -17,9 +18,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [message, setMessage] = useState<{
     type: 'error' | 'success';
     text: string;
+    canResend?: boolean;
   } | null>(null);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -31,11 +34,22 @@ export default function LoginPage() {
 
     try {
       if (authMode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
-        if (error) throw error;
+
+        if (error) {
+          if (error.message.toLowerCase().includes('email not confirmed')) {
+            setMessage({
+              type: 'error',
+              text: 'Email not confirmed yet. Click "Resend Confirmation" below, or confirm the user in your Supabase dashboard.',
+              canResend: true,
+            });
+            return;
+          }
+          throw error;
+        }
 
         setMessage({ type: 'success', text: 'Login successful! Redirecting…' });
 
@@ -45,7 +59,7 @@ export default function LoginPage() {
           window.location.href = redirectTo;
         }, 500);
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -56,17 +70,67 @@ export default function LoginPage() {
         });
         if (error) throw error;
 
-        setMessage({
-          type: 'success',
-          text: 'Account created! Please check your email to confirm or sign in.',
-        });
+        if (data.session) {
+          // If "Confirm email" is disabled in Supabase, the user is signed in immediately
+          setMessage({
+            type: 'success',
+            text: 'Account created and verified! Redirecting to hub…',
+          });
+          const params = new URLSearchParams(window.location.search);
+          const redirectTo = params.get('redirectTo') || '/';
+          setTimeout(() => {
+            window.location.href = redirectTo;
+          }, 600);
+        } else {
+          // Email confirmation is required
+          setMessage({
+            type: 'success',
+            text: 'Account created! Please check your email inbox to confirm, or click "Resend Confirmation" below.',
+            canResend: true,
+          });
+        }
       }
     } catch (err: unknown) {
       const errorMessage =
         err instanceof Error ? err.message : 'Authentication failed.';
-      setMessage({ type: 'error', text: errorMessage });
+      const isUnconfirmed = errorMessage.toLowerCase().includes('email not confirmed');
+      setMessage({
+        type: 'error',
+        text: errorMessage,
+        canResend: isUnconfirmed,
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email.trim()) {
+      setMessage({
+        type: 'error',
+        text: 'Please enter your email above to resend confirmation.',
+      });
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email.trim(),
+      });
+      if (error) throw error;
+      setMessage({
+        type: 'success',
+        text: `Confirmation link resent to ${email.trim()}! Please check your inbox and spam folder.`,
+      });
+    } catch (err: unknown) {
+      const errMessage =
+        err instanceof Error ? err.message : 'Failed to resend confirmation email.';
+      setMessage({ type: 'error', text: errMessage });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -83,9 +147,7 @@ export default function LoginPage() {
       {/* Main Pinterest Card Container */}
       <div className="relative w-full max-w-[780px] min-h-[460px] bg-[#0f0e11] rounded-[26px] border-2 border-red-500/90 shadow-[0_0_35px_rgba(239,68,68,0.55),0_0_75px_rgba(220,38,38,0.25),inset_0_0_15px_rgba(239,68,68,0.2)] overflow-hidden flex flex-col md:flex-row">
         
-        {/* ============================================================== */}
-        {/* RIGHT DIAGONAL RED BANNER (Desktop: diagonal slice, Mobile: top) */}
-        {/* ============================================================== */}
+        {/* RIGHT DIAGONAL RED BANNER */}
         <div
           className="hidden md:block absolute inset-0 pointer-events-none"
           style={{
@@ -136,9 +198,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* ============================================================== */}
         {/* LEFT FORM SECTION */}
-        {/* ============================================================== */}
         <div className="relative z-20 w-full md:w-[50%] flex flex-col justify-center px-8 sm:px-12 py-10">
           <h1 className="text-3xl font-extrabold text-white text-center mb-8 tracking-wide">
             {authMode === 'signin' ? 'Login' : 'Register'}
@@ -154,18 +214,36 @@ export default function LoginPage() {
 
           {message && (
             <div
-              className={`mb-4 p-2.5 rounded-lg text-[11px] flex items-center gap-2 ${
+              className={`mb-4 p-3 rounded-lg text-xs space-y-2 ${
                 message.type === 'error'
-                  ? 'bg-red-950/80 border border-red-500/50 text-red-200'
-                  : 'bg-emerald-950/80 border border-emerald-500/50 text-emerald-200'
+                  ? 'bg-red-950/90 border border-red-500/50 text-red-200'
+                  : 'bg-emerald-950/90 border border-emerald-500/50 text-emerald-200'
               }`}
             >
-              {message.type === 'error' ? (
-                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-400" />
-              ) : (
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+              <div className="flex items-start gap-2">
+                {message.type === 'error' ? (
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400 mt-0.5" />
+                )}
+                <span>{message.text}</span>
+              </div>
+
+              {message.canResend && (
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={isResending}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-semibold bg-red-600/30 hover:bg-red-600/50 border border-red-500/50 text-white transition-colors cursor-pointer"
+                >
+                  {isResending ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
+                  <span>Resend Confirmation Email</span>
+                </button>
               )}
-              <span>{message.text}</span>
             </div>
           )}
 
@@ -271,7 +349,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => {
-                alert('Password reset link has been dispatched to your registered email.');
+                alert('Password reset link will be sent to your email address.');
               }}
               className="text-[11px] text-white/50 hover:text-white/80 transition-colors cursor-pointer pt-1"
             >

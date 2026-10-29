@@ -61,13 +61,22 @@ export function AuthModal({
           email: email.trim(),
           password,
         });
-        if (error) throw error;
+        if (error) {
+          if (error.message.toLowerCase().includes('email not confirmed')) {
+            setMessage({
+              type: 'error',
+              text: 'Email not confirmed yet. Please verify your email or disable "Confirm email" in Supabase settings.',
+            });
+            return;
+          }
+          throw error;
+        }
         setMessage({ type: 'success', text: 'Successfully authenticated!' });
         onSupabaseAuthChange?.();
         // Full reload so the middleware picks up the new session cookies
         setTimeout(() => window.location.reload(), 800);
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -77,11 +86,17 @@ export function AuthModal({
           },
         });
         if (error) throw error;
-        setMessage({
-          type: 'success',
-          text: 'Account created! Please check your email for confirmation or log in.',
-        });
-        onSupabaseAuthChange?.();
+        if (data.session) {
+          setMessage({ type: 'success', text: 'Account created! Logging you in…' });
+          onSupabaseAuthChange?.();
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          setMessage({
+            type: 'success',
+            text: 'Account created! Please check your email to confirm before logging in.',
+          });
+          onSupabaseAuthChange?.();
+        }
       }
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Authentication failed.' });
