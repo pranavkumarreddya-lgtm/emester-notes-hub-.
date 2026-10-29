@@ -132,23 +132,19 @@ export function MaterialUploadModal({
         const authorName = uploaderName.trim() || 'Student';
 
         // Insert metadata record into materials table
+        const insertPayload: Record<string, any> = {
+          title: title.trim(),
+          description: description.trim() || null,
+          subject,
+          category,
+          unit: unit || null,
+          original_filename: selectedFile.name,
+          storage_path: storagePath,
+        };
+
         const { data: insertData, error: insertError } = await supabase
           .from('materials')
-          .insert([
-            {
-              title: title.trim(),
-              description: description.trim() || null,
-              subject,
-              category,
-              unit: unit || null,
-              uploader_id: null,
-              uploader_name: authorName,
-              original_filename: selectedFile.name,
-              storage_path: storagePath,
-              file_size: selectedFile.size,
-              mime_type: selectedFile.type,
-            },
-          ])
+          .insert([insertPayload])
           .select()
           .single();
 
@@ -158,6 +154,9 @@ export function MaterialUploadModal({
 
         onMaterialUploaded({
           ...insertData,
+          uploader_name: insertData.uploader_name || authorName,
+          file_size: insertData.file_size || selectedFile.size,
+          mime_type: insertData.mime_type || selectedFile.type,
           download_url: publicUrlData?.publicUrl,
         });
       } else {
