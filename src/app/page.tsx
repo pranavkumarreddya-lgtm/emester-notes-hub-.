@@ -113,11 +113,15 @@ export default function HomePage() {
     }
   };
 
-  // Handle new uploaded material
-  const handleMaterialUploaded = (newMaterial: Material) => {
+  // Handle new uploaded material(s)
+  const handleMaterialUploaded = (newItems: Material | Material[]) => {
+    const itemsArray = Array.isArray(newItems) ? newItems : [newItems];
+    if (itemsArray.length === 0) return;
+
     setMaterials((prev) => {
-      const filtered = prev.filter((m) => m.id !== newMaterial.id);
-      const updated = [newMaterial, ...filtered];
+      const newIds = new Set(itemsArray.map((m) => m.id));
+      const filtered = prev.filter((m) => !newIds.has(m.id));
+      const updated = [...itemsArray, ...filtered];
       if (!isConfigured) {
         try {
           localStorage.setItem(
@@ -131,12 +135,18 @@ export default function HomePage() {
       return updated;
     });
 
-    // Automatically switch to subject and category of uploaded file
-    setSelectedSubject(newMaterial.subject);
-    setSelectedCategory(newMaterial.category);
-    setSelectedUnit('ALL'); // Reset unit filter so the newly uploaded file is immediately visible
-    setSearchQuery('');    // Clear search query so file is not hidden
-    showToast(`"${newMaterial.title}" saved to ${newMaterial.category}!`);
+    // Automatically switch to subject and category of the uploaded file
+    const first = itemsArray[0];
+    setSelectedSubject(first.subject);
+    setSelectedCategory(first.category);
+    setSelectedUnit('ALL'); // Reset unit filter so the newly uploaded file(s) are immediately visible
+    setSearchQuery('');    // Clear search query so files are not hidden
+
+    if (itemsArray.length === 1) {
+      showToast(`"${first.title}" saved to ${first.category}!`);
+    } else {
+      showToast(`${itemsArray.length} files saved to ${first.category}!`);
+    }
   };
 
   // Handle material deletion
