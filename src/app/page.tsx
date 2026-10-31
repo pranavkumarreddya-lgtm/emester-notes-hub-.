@@ -103,7 +103,7 @@ export default function HomePage() {
 
       if (error) {
         console.warn('Supabase materials query warning:', error.message);
-      } else if (dbMaterials && dbMaterials.length > 0) {
+      } else if (dbMaterials) {
         setMaterials(dbMaterials);
       }
     } catch (err) {
@@ -116,7 +116,8 @@ export default function HomePage() {
   // Handle new uploaded material
   const handleMaterialUploaded = (newMaterial: Material) => {
     setMaterials((prev) => {
-      const updated = [newMaterial, ...prev];
+      const filtered = prev.filter((m) => m.id !== newMaterial.id);
+      const updated = [newMaterial, ...filtered];
       if (!isConfigured) {
         try {
           localStorage.setItem(
@@ -133,7 +134,9 @@ export default function HomePage() {
     // Automatically switch to subject and category of uploaded file
     setSelectedSubject(newMaterial.subject);
     setSelectedCategory(newMaterial.category);
-    showToast(`"${newMaterial.title}" uploaded successfully!`);
+    setSelectedUnit('ALL'); // Reset unit filter so the newly uploaded file is immediately visible
+    setSearchQuery('');    // Clear search query so file is not hidden
+    showToast(`"${newMaterial.title}" saved to ${newMaterial.category}!`);
   };
 
   // Handle material deletion
@@ -472,14 +475,16 @@ export default function HomePage() {
       </footer>
 
       {/* Modals */}
-      <MaterialUploadModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        defaultSubject={selectedSubject}
-        defaultCategory={selectedCategory}
-        currentFriend={currentFriend}
-        onMaterialUploaded={handleMaterialUploaded}
-      />
+      {isUploadOpen && (
+        <MaterialUploadModal
+          isOpen={isUploadOpen}
+          onClose={() => setIsUploadOpen(false)}
+          defaultSubject={selectedSubject}
+          defaultCategory={selectedCategory}
+          currentFriend={currentFriend}
+          onMaterialUploaded={handleMaterialUploaded}
+        />
+      )}
 
       <PreviewModal
         material={previewMaterial}

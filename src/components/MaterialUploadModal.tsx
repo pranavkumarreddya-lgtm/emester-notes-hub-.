@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { SubjectCode, MaterialCategory, MaterialUnit, Material } from '../lib/types';
-import { SUBJECTS, CATEGORIES, UNITS, MAX_FILE_SIZE_BYTES } from '../lib/constants';
+import { SUBJECTS, CATEGORIES, UNITS } from '../lib/constants';
 import { validateUploadFile, formatBytes } from '../lib/utils';
 import { createClient, isSupabaseConfigured } from '../lib/supabase/client';
 import {
@@ -13,7 +13,7 @@ import {
   Loader2,
   FileText,
   Image as ImageIcon,
-  HelpCircle,
+  GraduationCap,
 } from 'lucide-react';
 
 interface MaterialUploadModalProps {
@@ -50,7 +50,37 @@ export function MaterialUploadModal({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fresh reset helper: clears all form state so upload is always completely fresh
+  const resetForm = () => {
+    setSelectedFile(null);
+    setTitle('');
+    setDescription('');
+    setSubject(defaultSubject);
+    setCategory(defaultCategory);
+    setUnit('Unit 1');
+    setUploaderName('Student');
+    setIsUploading(false);
+    setErrorMessage(null);
+    setIsDragOver(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Reset form whenever modal opens or default subject/category changes
+  useEffect(() => {
+    if (isOpen) {
+      resetForm();
+    }
+  }, [isOpen, defaultSubject, defaultCategory]);
+
   if (!isOpen) return null;
+
+  const handleClose = () => {
+    if (isUploading) return;
+    resetForm();
+    onClose();
+  };
 
   const handleFileChange = (file: File) => {
     setErrorMessage(null);
@@ -61,20 +91,13 @@ export function MaterialUploadModal({
     }
     setSelectedFile(file);
 
-    // Auto-fill title if empty
-    if (!title) {
+    // Auto-fill title from clean filename if title is currently empty
+    if (!title.trim()) {
       const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
       setTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
     }
-
-    // Auto-suggest category based on type
-    if (file.type.startsWith('image/')) {
-      setCategory('Photos');
-    } else if (file.type === 'application/pdf') {
-      if (category === 'Photos') {
-        setCategory('PDF Notes');
-      }
-    }
+    // Note: We intentionally preserve the user's selected category.
+    // PDFs and Images can be stored in any user-selected category (PDF Notes, Photos, or Previous Year Question Papers).
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -93,6 +116,10 @@ export function MaterialUploadModal({
     }
     if (!title.trim()) {
       setErrorMessage('Please provide a title for the material.');
+      return;
+    }
+    if (!category || !CATEGORIES.includes(category)) {
+      setErrorMessage('Please select a valid category.');
       return;
     }
 
@@ -118,7 +145,7 @@ export function MaterialUploadModal({
         if (uploadError) {
           if (uploadError.message.toLowerCase().includes('bucket not found')) {
             throw new Error(
-              'Bucket "study-materials" not found in Supabase. Please go to Supabase Dashboard > Storage, click "New bucket", name it "study-materials", and turn ON "Public bucket".'
+              'Bucket "study-materials" not found in Supabase. Please ensure the bucket exists and is set to Public.'
             );
           }
           throw new Error(`Storage upload failed: ${uploadError.message}`);
@@ -131,7 +158,7 @@ export function MaterialUploadModal({
 
         const authorName = uploaderName.trim() || 'Student';
 
-        // Insert metadata record into materials table
+        // Insert metadata record into materials table using the EXACT selected category
         const insertPayload: Record<string, any> = {
           title: title.trim(),
           description: description.trim() || null,
@@ -160,7 +187,7 @@ export function MaterialUploadModal({
           download_url: publicUrlData?.publicUrl,
         });
       } else {
-        // Local Vault Demo Mode: Store file locally via Object URL / Base64
+        // Local Vault Mode
         const fileBlobUrl = URL.createObjectURL(selectedFile);
         const authorName = uploaderName.trim() || 'Student';
         const newMockMaterial: Material = {
@@ -183,6 +210,8 @@ export function MaterialUploadModal({
         onMaterialUploaded(newMockMaterial);
       }
 
+      // Reset and close
+      resetForm();
       onClose();
     } catch (err: any) {
       console.error('Upload error:', err);
@@ -194,7 +223,7 @@ export function MaterialUploadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8">
+      <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-8 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
           <div>
@@ -203,11 +232,11 @@ export function MaterialUploadModal({
               <span>Upload Semester Material</span>
             </h3>
             <p className="text-xs text-slate-500">
-              Open Sharing • Direct upload to Supabase storage
+              Open Sharing • Directly stored in your selected category
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             type="button"
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
           >
@@ -226,8 +255,14 @@ export function MaterialUploadModal({
 
           {/* File Dropzone */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Select Document or Photo
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Select Document or Photo <span className="text-rose-500">*</span></span>
+              {selectedFile && (
+                <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <FileCheck className="w-3.5 h-3.5" />
+                  Ready to upload
+                </span>
+              )}
             </label>
             <div
               onDragOver={(e) => {
@@ -254,18 +289,34 @@ export function MaterialUploadModal({
               />
 
               {selectedFile ? (
-                <div className="flex items-center justify-center gap-3 text-left">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                    <FileCheck className="w-5 h-5" />
+                <div className="flex items-center justify-between gap-3 text-left">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                      <FileCheck className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {formatBytes(selectedFile.size)} • Click to choose a different file
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 truncate">
-                      {selectedFile.name}
-                    </p>
-                    <p className="text-[11px] text-slate-500">
-                      {formatBytes(selectedFile.size)} • Click to choose a different file
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFile(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                    title="Remove file"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-1.5">
@@ -292,7 +343,7 @@ export function MaterialUploadModal({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Unit 3 Dynamic Programming Detailed Proofs"
+              placeholder="e.g. 2023 End-Sem Exam Question Paper or Unit 3 Notes"
               required
               className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900"
             />
@@ -321,7 +372,7 @@ export function MaterialUploadModal({
               <select
                 value={subject}
                 onChange={(e) => setSubject(e.target.value as SubjectCode)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900"
+                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900 cursor-pointer"
               >
                 {SUBJECTS.map((s) => (
                   <option key={s.code} value={s.code}>
@@ -332,13 +383,14 @@ export function MaterialUploadModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Category
+              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                <span>Category</span>
+                <span className="text-[10px] font-normal text-indigo-600">Selected target</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as MaterialCategory)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900"
+                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900 font-medium cursor-pointer"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>
@@ -346,6 +398,9 @@ export function MaterialUploadModal({
                   </option>
                 ))}
               </select>
+              <p className="mt-1 text-[11px] text-slate-500 truncate">
+                Will be stored in: <strong className="text-indigo-600 font-semibold">{category}</strong>
+              </p>
             </div>
           </div>
 
@@ -357,7 +412,7 @@ export function MaterialUploadModal({
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as MaterialUnit | '')}
-              className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900"
+              className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900 cursor-pointer"
             >
               <option value="">General / Across Syllabus</option>
               {UNITS.map((u) => (
@@ -376,7 +431,7 @@ export function MaterialUploadModal({
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Highlights professor's board examples on Knapsack and Bellman-Ford."
+              placeholder="e.g. 2023 semester exam paper with solutions, or Unit 3 handwritten formulas."
               rows={2}
               className="w-full text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 focus:bg-white text-slate-900 resize-none"
             />
@@ -386,7 +441,7 @@ export function MaterialUploadModal({
           <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isUploading}
               className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
             >
@@ -415,4 +470,3 @@ export function MaterialUploadModal({
     </div>
   );
 }
-
