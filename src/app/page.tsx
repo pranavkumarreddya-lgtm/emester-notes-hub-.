@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useTransition } from 'react';
 import { SubjectCode, MaterialCategory, MaterialUnit, Material } from '../lib/types';
 import { SUBJECTS, CATEGORIES, UNITS } from '../lib/constants';
-import { INITIAL_MOCK_MATERIALS, MOCK_APPROVED_MEMBERS } from '../lib/mock-data';
+import { INITIAL_MOCK_MATERIALS } from '../lib/mock-data';
 import { createClient, isSupabaseConfigured } from '../lib/supabase/client';
 
 import { Navbar } from '../components/Navbar';
