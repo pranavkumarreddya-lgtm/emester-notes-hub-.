@@ -1,4 +1,5 @@
 export type SubjectCode = 'NLP' | 'DA' | 'DAA' | 'DEVOPS' | 'CN';
+export type SubjectSlug = 'nlp' | 'da' | 'daa' | 'devops' | 'cn';
 
 export type MaterialCategory = 'PDF Notes' | 'Photos' | 'Previous Year Question Papers';
 
@@ -31,13 +32,22 @@ export interface ApprovedMember {
 
 export interface SubjectConfig {
   code: SubjectCode;
+  slug: SubjectSlug;
   title: string;
   fullName: string;
   description: string;
   iconName: string;
+  accentBg: string;
+  accentBorder: string;
+  accentText: string;
+  accentBadge: string;
+  iconBg: string;
+  iconText: string;
   pastelBg: string;
   pastelBorder: string;
   pastelBadge: string;
   pastelText: string;
   accentGradient: string;
+  quickTopics: string[];
+  relatedSubjects: SubjectCode[];
 }

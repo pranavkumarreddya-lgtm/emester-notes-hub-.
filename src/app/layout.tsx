@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Semester Notes Hub | 3-Friend Collaborative Study Vault",
-  description: "Collaborative semester study repository for NLP, DA, DAA, DEVOPS, and CN.",
+  title: "Semester Notes Hub | Your Semester, Organized",
+  description:
+    "Organized academic repository for NLP, DA, DAA, DEVOPS, and CN. Download PDF notes, classroom whiteboard photos, and previous year question papers.",
 };
 
 export default function RootLayout({
@@ -12,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased scroll-smooth">
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white">
+    <html lang="en" className="h-full scroll-smooth">
+      <body className="min-h-full bg-white text-slate-900 antialiased flex flex-col selection:bg-blue-600 selection:text-white">
         {children}
       </body>
     </html>
